@@ -1,11 +1,4 @@
-# ignore all (get's rid of executables)
-*
-
-# unignore with extenstions
-!*.*
-
-# unignore directories
-*/
+.build/
 
 # ignore produced files
 *.o
