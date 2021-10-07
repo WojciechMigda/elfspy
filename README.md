@@ -41,6 +41,16 @@ Then run `make`. Built example programs can then be executed with `qemu`:
 $> qemu-ppc -L /usr/powerpc-linux-gnu/ ./example1
 ```
 
+### Examples' status
+
+* `example1` - runs correctly on X86_64, ARM, and PowerPC.
+* `example2` - runs correctly on X86_64, ARM, and PowerPC.
+* `example3` - runs correctly on X86_64. On ARM it also works, but `time` is not an IRELATIVE symbol in ARM's libc; `memchr` could be used here. On PowerPC it does not work.
+* `example5` - runs correctly on X86_64, ARM, and PowerPC.
+* `example6` - runs correctly on X86_64 and PowerPC. On ARM it segfaults.
+* `example7` - runs correctly on X86_64 and PowerPC. On ARM it segfaults.
+* `example9` - runs correctly on X86_64, ARM, and PowerPC.
+
 ---
 
 ELFspy is a library for linux for writing tests using [fakes and spies](http://xunitpatterns.com/Test%20Double.html) in C++. For very large call graphs, the testing of the higher nodes can be difficult due to the sum of dependencies of lower nodes e.g. databases, network connections etc. Adding fakes and spies to the callees of a function allows it to be tested in isolation without the inherited dependencies.
