@@ -1,4 +1,5 @@
 .build/
+.build_*/
 
 # ignore produced files
 *.o

@@ -3,15 +3,15 @@
 # Sample toolchain file for building for ARM (w/hw float support) from an Ubuntu Linux system.
 #
 # Typical usage:
-#    *) install cross compiler: `sudo apt-get install gcc-arm-linux-gnueabihf g++-arm-linux-gnueabihf`
-#    *) cd .build_arm
-#    *) cmake -DCMAKE_TOOLCHAIN_FILE=../toolchain-arm.cmake ..
+#    *) install cross compiler: `sudo apt-get install gcc-powerpc-linux-gnu g++-powerpc-linux-gnu`
+#    *) cd .build_ppc
+#    *) cmake -DCMAKE_TOOLCHAIN_FILE=../toolchain-ppc.cmake ..
 
 # name of the target OS on which the built artifacts will run and the
 # toolchain prefix. if target is an embedded system without an OS, set
 # CMAKE_SYSTEM_NAME to `Generic`
 set(CMAKE_SYSTEM_NAME Linux)
-set(TOOLCHAIN_PREFIX arm-linux-gnueabihf)
+set(TOOLCHAIN_PREFIX powerpc-linux-gnu)
 
 # cross compilers to use for C and C++
 set(CMAKE_C_COMPILER ${TOOLCHAIN_PREFIX}-gcc)
