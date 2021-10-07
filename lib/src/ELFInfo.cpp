@@ -34,6 +34,28 @@ using Elf_Sym = Elf32_Sym;
 #define ELF_R_TYPE(X) ELF32_R_TYPE(X)
 #endif
 
+#if defined __x86_64__ || defined __x86_64
+enum
+{
+  R_JUMP_SLOT = R_X86_64_JUMP_SLOT,
+  R_IRELATIVE = R_X86_64_IRELATIVE
+};
+#elif defined __arm__ || defined __arm
+enum
+{
+  R_JUMP_SLOT = R_ARM_JUMP_SLOT,
+  R_IRELATIVE = R_ARM_IRELATIVE
+};
+#elif defined __powerpc__
+enum
+{
+  R_JUMP_SLOT = R_PPC_JMP_SLOT,
+  R_IRELATIVE = R_PPC_IRELATIVE
+};
+#else
+#error unsupported OS
+#endif
+
 namespace
 {
 long page_size = sysconf(_SC_PAGESIZE);
@@ -246,8 +268,16 @@ ELFInfo::Symbol ELFInfo::get_symbol_rela(size_t value) const
     return result; // not found
   }
   // attempt to find symbol in .rela.plt using index from symbol table
-  for (auto& reloc : find_header(".rela.plt").as_section<Elf_Rela>()) {
-    if (ELF_R_TYPE(reloc.r_info) == R_X86_64_JUMP_SLOT) {
+#if defined __x86_64__ || defined __x86_64 || defined __powerpc__
+  char const * rel_plt_name = ".rela.plt";
+#elif defined __arm__ || defined __arm
+  char const * rel_plt_name = ".rel.plt";
+#else
+#error unsupported OS
+#endif
+
+  for (auto& reloc : find_header(rel_plt_name).as_section<Elf_Rela>()) {
+    if (ELF_R_TYPE(reloc.r_info) == R_JUMP_SLOT) {
       // find symbol by index
       size_t symbol_index = ELF_R_SYM(reloc.r_info);
       if (symbol_index == index) {
@@ -290,10 +320,19 @@ ELFInfo::Symbol ELFInfo::get_indirect_symbol_rela(const unsigned char* base,
 
 size_t ELFInfo::get_symbol_rela_dyn(const char* name)
 {
+#if defined __x86_64__ || defined __x86_64
+  auto const rel_sections = {".rela.dyn", ".rela.plt"};
+#elif defined __arm__ || defined __arm
+  auto const rel_sections = {".rel.plt", ".rel.dyn"};
+#elif defined __powerpc__
+  auto const rel_sections = {".rela.plt", ".rela.dyn"};
+#else
+#error unsupported OS
+#endif
   // find symbol table
   auto symbol_table = find_header(".dynsym").as_section<Elf_Sym>();
   // find symbol in .rela.dyn
-  for (const char* section : { ".rela.dyn", ".rela.plt" }) {
+  for (const char* section : rel_sections) {
     for (auto& reloc : find_header(section).as_section<Elf_Rel>()) {
       size_t symbol_index = ELF_R_SYM(reloc.r_info);
       if (symbol_index < symbol_table.entries()) {
