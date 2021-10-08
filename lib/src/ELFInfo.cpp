@@ -237,6 +237,10 @@ void ELFInfo::unprotect(unsigned char* base) const
   // by default this memory is read only - ELFspy needs to change it
   unprotect(base, ".got");
   unprotect(base, ".got.plt");
+#if defined __arm__ || defined __arm
+  // where vtables on ARM are
+  unprotect(base, ".dynamic");
+#endif
 }
 
 const char* ELFInfo::find_name(size_t name_offset) const
