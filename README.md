@@ -47,7 +47,7 @@ $> qemu-ppc -L /usr/powerpc-linux-gnu/ ./example1
 * `example2` - runs correctly on X86_64, ARM, and PowerPC.
 * `example3` - runs correctly on X86_64. On ARM it also works, but `time` is not an IRELATIVE symbol in ARM's libc; `memchr` could be used here. On PowerPC it does not work.
 * `example5` - runs correctly on X86_64, ARM, and PowerPC.
-* `example6` - runs correctly on X86_64 and PowerPC. On ARM it segfaults.
+* `example6` - runs correctly on X86_64, ARM, and PowerPC.
 * `example7` - runs correctly on X86_64 and PowerPC. On ARM it segfaults.
 * `example9` - runs correctly on X86_64, ARM, and PowerPC.
 

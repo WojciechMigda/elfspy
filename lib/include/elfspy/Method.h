@@ -59,8 +59,10 @@ inline Method<R, T, Args...>::Method(R (T::*cv_method)(Args...) const volatile)
 template <typename R, typename T, typename... Args>
 MethodInfo<R, T*, Args...> Method<R, T, Args...>::resolve()
 {
+  bool const is_virtual = spy::is_virtual(impl_);
+
   MethodInfo<R, T*, Args...> info;
-  if (impl_.is_virtual()) {
+  if (is_virtual) {
     info.vtable_entry_ = GOTEntry::get_vtable_entry(typeid(T), impl_);
     info.address_ = *info.vtable_entry_;
   } else {

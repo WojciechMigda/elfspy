@@ -29,6 +29,8 @@ inline bool MethodPointer::is_virtual() const
   return index_ & 1UL;
 }
 
+bool is_virtual(MethodPointer const & mp);
+
 } // namespace spy
 
 #endif

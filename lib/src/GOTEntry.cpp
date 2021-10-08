@@ -15,6 +15,7 @@
 #include "elfspy/ELFInfo.h"
 #include "elfspy/Fail.h"
 #include "elfspy/Report.h"
+#include "elfspy/MethodPointer.h"
 
 #ifdef __x86_64__
 #define Elf_Phdr Elf64_Phdr
@@ -86,6 +87,55 @@ int read_shared_object(struct dl_phdr_info* info, size_t size, void* data)
 
 namespace spy
 {
+
+// virtual method pointer is not really a pointer but an index.
+// hence, virtual method pointer will not be found in elf objects.
+bool is_virtual(MethodPointer const & mp)
+{
+    auto address = reinterpret_cast<unsigned char *>(mp.pointer_);
+    std::string symbol_name;
+
+    for (auto const & object : elf_objects)
+    {
+        // check if it is even possible for the function to exist in the object
+        size_t offset = address - object.base_;
+
+        if (offset < object.size_)
+        {
+            // that the offset is inside the size is a tell-tale the symbol can be
+            // found
+            ELFInfo elf(object.name_);
+            // find name in elf file where it is defined
+            ELFInfo::Symbol symbol = elf.get_symbol_rela(offset);
+            if (symbol.name_)
+            {
+                // symbol was defined
+                symbol_name = symbol.name_;
+                break;
+            }
+        }
+    }
+
+    if (symbol_name.empty())
+    {
+        // rare case of looking for an STT_IFUNC when not found at all
+        for (auto const & object : elf_objects)
+        {
+            ELFInfo elf(object.name_);
+
+            ELFInfo::Symbol symbol = elf.get_indirect_symbol_rela(object.base_, mp.pointer_);
+            if (symbol.rela_offset_)
+            {
+                // symbol was defined, offset is from the .rela.plt section
+                symbol_name = symbol.name_;
+                break;
+            }
+        }
+    }
+
+    return symbol_name.empty();
+}
+
 // arguments left in for future compatibility
 void GOTEntry::initialise(int argc, char** argv)
 {
@@ -184,7 +234,9 @@ void GOTEntry::make_entry(void** address)
 void** GOTEntry::get_vtable_entry(const std::type_info& type,
                                   const MethodPointer& method)
 {
-  if (method.is_virtual()) {
+  bool const is_virtual = ::spy::is_virtual(method);
+
+  if (is_virtual) {
     // this is a virtual function
     auto seek = vtables.find(type.name());
     if (seek != vtables.end()) {
