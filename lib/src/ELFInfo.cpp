@@ -50,7 +50,7 @@ enum
 enum
 {
   R_JUMP_SLOT = R_PPC_JMP_SLOT,
-  R_IRELATIVE = R_PPC_IRELATIVE
+  R_IRELATIVE = R_PPC_RELATIVE
 };
 #else
 #error unsupported OS
@@ -302,10 +302,20 @@ ELFInfo::Symbol ELFInfo::get_symbol_rela(size_t value) const
 ELFInfo::Symbol ELFInfo::get_indirect_symbol_rela(const unsigned char* base,
                                                   void* function)
 {
+#if defined __x86_64__ || defined __x86_64
+  char const * rel_plt_name = ".rela.plt";
+#elif defined __arm__ || defined __arm
+  char const * rel_plt_name = ".rel.dyn";
+#elif defined __powerpc__
+  char const * rel_plt_name = ".rela.dyn";
+#else
+#error unsupported OS
+#endif
+
   Symbol result;
   // find function in relocated GOT
-  for (auto& reloc : find_header(".rela.plt").as_section<Elf_Rela>()) {
-    if (ELF_R_TYPE(reloc.r_info) == R_X86_64_IRELATIVE &&
+  for (auto& reloc : find_header(rel_plt_name).as_section<Elf_Rela>()) {
+    if (ELF_R_TYPE(reloc.r_info) == R_IRELATIVE &&
         *reinterpret_cast<void* const*>(base + reloc.r_offset) == function) {
       result.rela_offset_ = reloc.r_offset;
       // find symbol by r_addend in dynamic symbol table
@@ -318,6 +328,10 @@ ELFInfo::Symbol ELFInfo::get_indirect_symbol_rela(const unsigned char* base,
       }
       break;
     }
+  }
+  if (result.name_ == nullptr)
+  {
+    result.name_ = "(null)";
   }
   return result; // whether found or not
 }
