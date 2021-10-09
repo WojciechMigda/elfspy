@@ -42,6 +42,17 @@ target_include_directories( example3 PRIVATE
     "$<TARGET_PROPERTY:elfspy,INTERFACE_INCLUDE_DIRECTORIES>"
 )
 
+add_executable( example4 "src/dummy.cpp" )
+target_sources( example4 PRIVATE "src/example4.cpp" )
+target_link_libraries( example4
+    PRIVATE elfspy::elfspy demo )
+target_compile_definitions( example4 PRIVATE
+    "$<TARGET_PROPERTY:elfspy,INTERFACE_COMPILE_DEFINITIONS>"
+)
+target_include_directories( example4 PRIVATE
+    "$<TARGET_PROPERTY:elfspy,INTERFACE_INCLUDE_DIRECTORIES>"
+)
+
 add_executable( example5 "src/dummy.cpp" )
 target_sources( example5 PRIVATE "src/example5.cpp" )
 target_link_libraries( example5

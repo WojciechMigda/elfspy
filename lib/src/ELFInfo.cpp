@@ -18,6 +18,7 @@ using Elf_Ehdr = Elf64_Ehdr;
 using Elf_Rel = Elf64_Rel;
 using Elf_Rela = Elf64_Rela;
 using Elf_Sym = Elf64_Sym;
+using Elf_Addr = Elf64_Addr;
 #define ELF_STTYPE(X) ELF64_ST_TYPE(X)
 #define ELF_STBIND(X) ELF64_ST_BIND(X)
 #define ELF_R_SYM(X) ELF64_R_SYM(X)
@@ -28,6 +29,7 @@ using Elf_Ehdr = Elf32_Ehdr;
 using Elf_Rel = Elf32_Rel;
 using Elf_Rela = Elf32_Rela;
 using Elf_Sym = Elf32_Sym;
+using Elf_Addr = Elf32_Addr;
 #define ELF_STTYPE(X) ELF32_ST_TYPE(X)
 #define ELF_STBIND(X) ELF32_ST_BIND(X)
 #define ELF_R_SYM(X) ELF32_R_SYM(X)
@@ -312,16 +314,28 @@ ELFInfo::Symbol ELFInfo::get_indirect_symbol_rela(const unsigned char* base,
 #error unsupported OS
 #endif
 
+  // this is needed on ARM, but it does not break other platforms
+  // so I leave it without conditional compilation guards.
+  auto const got_section_hdr = find_header(".got");
+  auto const got_section = got_section_hdr.as_section<Elf_Addr>();
+  auto got_begin = got_section_hdr.header_->sh_addr;
+  auto got_end = got_begin + got_section_hdr.header_->sh_size;
+
   Symbol result;
   // find function in relocated GOT
   for (auto& reloc : find_header(rel_plt_name).as_section<Elf_Rela>()) {
     if (ELF_R_TYPE(reloc.r_info) == R_IRELATIVE &&
         *reinterpret_cast<void* const*>(base + reloc.r_offset) == function) {
       result.rela_offset_ = reloc.r_offset;
+      // this conditional assignment of reloc_value is also needed on ARM
+      auto reloc_value = reloc.r_addend;
+      if (got_begin <= reloc.r_offset and reloc.r_offset < got_end) {
+        reloc_value = got_section[(reloc.r_offset - got_begin) / sizeof (Elf_Addr)];
+      }
       // find symbol by r_addend in dynamic symbol table
       for (auto& symbol : find_header(".dynsym").as_section<Elf_Sym>()) {
         if (ELF_STTYPE(symbol.st_info) == STT_GNU_IFUNC
-            && symbol.st_value == reloc.r_addend) {
+            && symbol.st_value == reloc_value) {
           result.name_ = find_name(symbol.st_name);
           break;
         }
